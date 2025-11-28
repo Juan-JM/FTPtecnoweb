@@ -79,7 +79,7 @@
                             <div class="mb-6">
                                 <h3 class="text-lg font-medium text-gray-900 mb-4">Método de Pago</h3>
                                 
-                                <div>
+                                <div class="mb-4">
                                     <label for="tnTipoServicio" class="block text-sm font-medium text-gray-700 mb-2">
                                         Selecciona el tipo de pago
                                     </label>
@@ -91,6 +91,78 @@
                                         <option value="1">Pago QR</option>
                                         <option value="2">Tigo Money</option>
                                     </select>
+                                </div>
+
+                                <!-- Tipo de Pago: Contado o Crédito -->
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                                        Modalidad de Pago
+                                    </label>
+                                    <div class="grid grid-cols-2 gap-3">
+                                        <label 
+                                            :class="[
+                                                'flex items-center justify-center p-3 border-2 rounded-lg cursor-pointer transition-all',
+                                                form.tipoPago === 'contado' 
+                                                    ? 'border-blue-500 bg-blue-50 text-blue-700' 
+                                                    : 'border-gray-300 hover:border-gray-400'
+                                            ]"
+                                        >
+                                            <input 
+                                                type="radio" 
+                                                v-model="form.tipoPago" 
+                                                value="contado" 
+                                                class="sr-only"
+                                            />
+                                            <div class="text-center">
+                                                <div class="font-semibold">💵 Contado</div>
+                                                <div class="text-xs text-gray-500">Pago único</div>
+                                            </div>
+                                        </label>
+                                        
+                                        <label 
+                                            :class="[
+                                                'flex items-center justify-center p-3 border-2 rounded-lg cursor-pointer transition-all',
+                                                form.tipoPago === 'credito' 
+                                                    ? 'border-green-500 bg-green-50 text-green-700' 
+                                                    : 'border-gray-300 hover:border-gray-400'
+                                            ]"
+                                        >
+                                            <input 
+                                                type="radio" 
+                                                v-model="form.tipoPago" 
+                                                value="credito" 
+                                                class="sr-only"
+                                            />
+                                            <div class="text-center">
+                                                <div class="font-semibold">📅 Crédito</div>
+                                                <div class="text-xs text-gray-500">2 cuotas (50%/50%)</div>
+                                            </div>
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <!-- Info de Crédito -->
+                                <div v-if="form.tipoPago === 'credito'" class="mt-4 p-4 bg-green-50 border border-green-200 rounded-lg">
+                                    <h4 class="font-medium text-green-800 mb-2">📋 Plan de Pagos</h4>
+                                    <div class="text-sm text-green-700 space-y-1">
+                                        <p><strong>Cuota 1:</strong> ${{ formatearPrecio(total / 2) }} - Pago inmediato</p>
+                                        <p><strong>Cuota 2:</strong> ${{ formatearPrecio(total - (total / 2)) }} - Vence en {{ form.diasSegundaCuota }} días</p>
+                                    </div>
+                                    
+                                    <div class="mt-3">
+                                        <label class="block text-xs font-medium text-green-700 mb-1">
+                                            Días para la segunda cuota
+                                        </label>
+                                        <select 
+                                            v-model="form.diasSegundaCuota" 
+                                            class="w-full px-2 py-1 text-sm border border-green-300 rounded focus:outline-none focus:ring-1 focus:ring-green-500"
+                                        >
+                                            <option :value="15">15 días</option>
+                                            <option :value="30">30 días</option>
+                                            <option :value="45">45 días</option>
+                                            <option :value="60">60 días</option>
+                                        </select>
+                                    </div>
                                 </div>
                             </div>
 
@@ -163,6 +235,13 @@
                                 <span>Total</span>
                                 <span>${{ formatearPrecio(total) }}</span>
                             </div>
+
+                            <!-- Resumen si es crédito -->
+                            <div v-if="form.tipoPago === 'credito'" class="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                                <p class="text-sm font-medium text-yellow-800">
+                                    💳 Pagarás ahora: ${{ formatearPrecio(total / 2) }}
+                                </p>
+                            </div>
                         </div>
                         
                         <!-- Volver al Carrito -->
@@ -185,7 +264,6 @@
                         <!-- Mensaje de Error -->
                         <div v-if="response && response.error" class="mb-6 bg-red-50 border border-red-200 rounded p-4">
                             <h3 class="font-medium text-red-800 mb-2">❌ Error en el Pago</h3>
-                            <p class="text-red-700 mb-3">{{ response.message }}</p>
                             
                             <!-- Información de Debug -->
                             <div v-if="response.debug_info" class="mt-4 p-3 bg-red-100 rounded text-sm">
@@ -214,8 +292,28 @@
                         <!-- Pago Completado -->
                         <div v-if="pagoCompletado" class="mb-6 bg-green-50 border-2 border-green-400 rounded-lg p-6 text-center animate-fade-in">
                             <div class="text-6xl mb-4">🎉</div>
-                            <h3 class="text-2xl font-bold text-green-800 mb-2">¡Pago Completado!</h3>
-                            <p class="text-green-700 mb-4">Tu pago ha sido procesado exitosamente.</p>
+                            <h3 class="text-2xl font-bold text-green-800 mb-2">
+                                {{ response?.tipoPago === 'credito' ? '¡Primera Cuota Pagada!' : '¡Pago Completado!' }}
+                            </h3>
+                            <p class="text-green-700 mb-4">
+                                {{ response?.tipoPago === 'credito' 
+                                    ? 'Tu primera cuota ha sido procesada. Recuerda pagar la segunda cuota antes del vencimiento.' 
+                                    : 'Tu pago ha sido procesado exitosamente.' 
+                                }}
+                            </p>
+                            
+                            <!-- Info de siguiente cuota si es crédito -->
+                            <div v-if="response?.tipoPago === 'credito' && response?.cuotaInfo" class="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg text-left">
+                                <h4 class="font-medium text-yellow-800 mb-2">📅 Próxima Cuota</h4>
+                                <p class="text-sm text-yellow-700">
+                                    <strong>Monto:</strong> ${{ formatearPrecio(response.cuotaInfo.cuotas[1]?.monto || (total / 2)) }}<br>
+                                    <strong>Vencimiento:</strong> {{ response.cuotaInfo.cuotas[1]?.fecha_vencimiento }}
+                                </p>
+                                <p class="text-xs text-yellow-600 mt-2">
+                                    Podrás pagar tu segunda cuota desde tu historial de compras.
+                                </p>
+                            </div>
+                            
                             <button 
                                 @click="volverAlCarrito" 
                                 class="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition"
@@ -226,7 +324,20 @@
                         
                         <!-- QR Code Exitoso -->
                         <div v-if="qrImage && !pagoCompletado" class="text-center mb-6">
-                            <h3 class="text-lg font-medium mb-4 text-green-700">✅ ¡Pago Generado! Escanea el código QR</h3>
+                            <h3 class="text-lg font-medium mb-4 text-green-700">
+                                ✅ ¡Pago Generado! Escanea el código QR
+                            </h3>
+                            
+                            <!-- Indicador de cuota si es crédito -->
+                            <div v-if="form.tipoPago === 'credito'" class="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                                <p class="text-sm font-semibold text-blue-800">
+                                    📋 Cuota 1 de 2 - ${{ formatearPrecio(response?.amount || (total / 2)) }}
+                                </p>
+                                <p class="text-xs text-blue-600 mt-1">
+                                    Total de la compra: ${{ formatearPrecio(total) }}
+                                </p>
+                            </div>
+                            
                             <div class="bg-white p-4 border-2 border-green-300 rounded-lg inline-block">
                                 <img :src="qrImage" alt="Código QR" class="mx-auto max-w-xs" />
                             </div>
@@ -309,7 +420,9 @@ const form = reactive({
     tnDescuento: 0,
     tnTotal: 0,
     tnTipoServicio: 1,
-    taPedidoDetalle: ''
+    taPedidoDetalle: '',
+    tipoPago: 'contado', // 'contado' o 'credito'
+    diasSegundaCuota: 30
 });
 
 // Inicializar formulario con datos del usuario y carrito

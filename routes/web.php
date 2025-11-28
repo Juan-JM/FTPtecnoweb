@@ -72,6 +72,13 @@ Route::middleware([\App\Http\Middleware\ContadorDeVisitas::class])->group(functi
             Route::put('/carrito/{id}', [CarritoController::class, 'actualizar'])->name('carrito.actualizar');
             Route::delete('/carrito/{id}', [CarritoController::class, 'eliminar'])->name('carrito.eliminar');
             Route::delete('/carrito/limpiar', [CarritoController::class, 'limpiar'])->name('carrito.limpiar');
+            
+            // Cuotas pendientes
+            Route::get('/mis-cuotas', function () {
+                return \Inertia\Inertia::render('MisCuotas', [
+                    'usuario' => \Illuminate\Support\Facades\Auth::user()
+                ]);
+            })->name('mis.cuotas');
         });
 
         // API para contador de carrito
@@ -179,6 +186,10 @@ Route::middleware([\App\Http\Middleware\ContadorDeVisitas::class])->group(functi
         Route::post('/consultar', [ConsumirServicioController::class, 'consultarEstado'])->name('consultar.estado');
         Route::post('/verificar-pago', [ConsumirServicioController::class, 'verificarPago'])->name('verificar.pago');
         Route::post('/urlcallback', [ConsumirServicioController::class, 'urlCallback'])->name('url.callback');
+        
+        // Rutas para pagos a crédito
+        Route::post('/generar-qr-cuota', [ConsumirServicioController::class, 'generarQrCuota'])->name('generar.qr.cuota');
+        Route::get('/mis-cuotas-pendientes', [ConsumirServicioController::class, 'misCuotasPendientes'])->name('mis.cuotas.pendientes');
     });
 
     // Rutas para PROVEEDORES (acceso a compras y catálogo)

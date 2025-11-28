@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Auth;
 use App\Models\Venta;
 use App\Models\DetalleVenta;
 use App\Models\Carrito;
+use App\Models\Cuota;
 
 class ConsumirServicioController extends Controller
 {
@@ -40,10 +41,21 @@ class ConsumirServicioController extends Controller
                 'taPedidoDetalle' => 'nullable|string|max:500',
                 'tcSerial' => 'nullable|string',
                 'tnDescuento' => 'nullable|numeric',
-                'tnTipoServicio' => 'nullable|numeric'
+                'tnTipoServicio' => 'nullable|numeric',
+                'tipoPago' => 'nullable|in:contado,credito',
+                'diasSegundaCuota' => 'nullable|integer|min:7|max:90',
             ]);
             
             Log::info('Iniciando proceso de pago PagoFacil', ['datos_validados' => $validatedData]);
+
+            // Determinar tipo de pago
+            $tipoPago = $validatedData['tipoPago'] ?? 'contado';
+            $diasSegundaCuota = $validatedData['diasSegundaCuota'] ?? 30;
+            $totalOriginal = floatval($validatedData['tnTotal']);
+            
+            // Si es crédito, el QR se genera por el 50% (primera cuota)
+            $montoQr = $tipoPago === 'credito' ? round($totalOriginal / 2, 2) : $totalOriginal;
+            $detalleExtra = $tipoPago === 'credito' ? ' (Cuota 1 de 2)' : '';
 
             // Preparar datos para el servicio
             $datosQr = [
@@ -52,8 +64,8 @@ class ConsumirServicioController extends Controller
                 'telefono' => preg_replace('/[^0-9]/', '', $validatedData['tnTelefono']),
                 'email' => $validatedData['tcCorreo'],
                 'numero_pedido' => 'TECNO_' . time() . '_' . rand(1000, 9999),
-                'monto' => floatval($validatedData['tnTotal']),
-                'detalle_pedido' => $validatedData['taPedidoDetalle'] ?? 'Compra en TecnoWeb',
+                'monto' => $montoQr,
+                'detalle_pedido' => ($validatedData['taPedidoDetalle'] ?? 'Compra en TecnoWeb') . $detalleExtra,
             ];
 
             // Generar QR usando el servicio moderno
@@ -70,7 +82,8 @@ class ConsumirServicioController extends Controller
                 Log::info('Datos extraídos del QR:', [
                     'transactionId' => $transactionId,
                     'paymentNumber' => $paymentNumber,
-                    'qrImage_exists' => !empty($qrImage)
+                    'qrImage_exists' => !empty($qrImage),
+                    'tipoPago' => $tipoPago
                 ]);
                 
                 // Crear venta en estado PENDIENTE
@@ -78,9 +91,35 @@ class ConsumirServicioController extends Controller
                 Log::info('Usuario autenticado:', ['usuario_id' => $usuarioId]);
                 
                 $ventaCreada = null;
+                $cuotaInfo = null;
+                
                 if ($usuarioId && $paymentNumber) {
-                    $ventaCreada = $this->crearVentaPendiente($usuarioId, $paymentNumber, $transactionId, floatval($validatedData['tnTotal']));
+                    $ventaCreada = $this->crearVentaPendiente(
+                        $usuarioId, 
+                        $paymentNumber, 
+                        $transactionId, 
+                        $totalOriginal,
+                        $tipoPago,
+                        $diasSegundaCuota
+                    );
                     Log::info('Resultado de crear venta:', ['venta' => $ventaCreada ? $ventaCreada->id : 'NULL']);
+                    
+                    // Si es crédito, devolver info de las cuotas
+                    if ($ventaCreada && $tipoPago === 'credito') {
+                        $cuotaInfo = [
+                            'tipo_pago' => 'credito',
+                            'cuotas' => $ventaCreada->cuotas->map(function($cuota) {
+                                return [
+                                    'numero' => $cuota->numero_cuota,
+                                    'monto' => $cuota->monto,
+                                    'fecha_vencimiento' => $cuota->fecha_vencimiento->format('Y-m-d'),
+                                    'estado' => $cuota->estado,
+                                ];
+                            }),
+                            'monto_primera_cuota' => $montoQr,
+                            'dias_segunda_cuota' => $diasSegundaCuota,
+                        ];
+                    }
                 } else {
                     Log::warning('No se pudo crear venta - falta usuarioId o paymentNumber', [
                         'usuarioId' => $usuarioId,
@@ -96,9 +135,12 @@ class ConsumirServicioController extends Controller
                         'qrBase64' => $qrImage,
                         'transactionId' => $transactionId,
                         'paymentNumber' => $paymentNumber,
-                        'amount' => $datosQr['monto'],
+                        'amount' => $montoQr,
+                        'totalOriginal' => $totalOriginal,
                         'expirationDate' => $resultado['expirationDate'] ?? null,
-                        'ventaCreada' => $ventaCreada ? $ventaCreada->id : null
+                        'ventaCreada' => $ventaCreada ? $ventaCreada->id : null,
+                        'tipoPago' => $tipoPago,
+                        'cuotaInfo' => $cuotaInfo,
                     ]
                 ]);
             } else {
@@ -215,14 +257,16 @@ class ConsumirServicioController extends Controller
     /**
      * Crear venta pendiente antes de que el usuario pague
      */
-    private function crearVentaPendiente($usuarioId, $paymentNumber, $transactionId, $total)
+    private function crearVentaPendiente($usuarioId, $paymentNumber, $transactionId, $total, $tipoPago = 'contado', $diasSegundaCuota = 30)
     {
         try {
             Log::info('=== INICIANDO crearVentaPendiente ===', [
                 'usuarioId' => $usuarioId,
                 'paymentNumber' => $paymentNumber,
                 'transactionId' => $transactionId,
-                'total' => $total
+                'total' => $total,
+                'tipoPago' => $tipoPago,
+                'diasSegundaCuota' => $diasSegundaCuota
             ]);
             
             // Verificar si ya existe una venta con este payment_number
@@ -242,6 +286,8 @@ class ConsumirServicioController extends Controller
                 'usuario_id' => $usuarioId,
                 'payment_number' => $paymentNumber,
                 'transaction_id' => $transactionId,
+                'tipo_pago' => $tipoPago,
+                'estado_pago' => 'pendiente',
             ]);
             
             Log::info('Venta creada en BD:', ['venta_id' => $venta->id, 'venta' => $venta->toArray()]);
@@ -260,12 +306,34 @@ class ConsumirServicioController extends Controller
                 Log::info('Detalle venta creado:', ['detalle_id' => $detalle->id]);
             }
 
+            // Si es crédito, crear plan de pagos (2 cuotas 50/50)
+            if ($tipoPago === 'credito') {
+                $cuotas = $venta->crearPlanPagos($diasSegundaCuota);
+                
+                // Asignar payment_number a la primera cuota
+                $cuotas[0]->update([
+                    'payment_number' => $paymentNumber,
+                    'transaction_id' => $transactionId,
+                ]);
+                
+                Log::info('Plan de pagos creado:', [
+                    'cuotas' => count($cuotas),
+                    'cuota1_monto' => $cuotas[0]->monto,
+                    'cuota2_monto' => $cuotas[1]->monto,
+                    'cuota2_vencimiento' => $cuotas[1]->fecha_vencimiento,
+                ]);
+            }
+
             DB::commit();
+            
+            // Recargar la venta con cuotas
+            $venta->load('cuotas');
             
             Log::info('✅ Venta pendiente creada exitosamente:', [
                 'venta_id' => $venta->id,
                 'payment_number' => $paymentNumber,
-                'transaction_id' => $transactionId
+                'transaction_id' => $transactionId,
+                'tipo_pago' => $tipoPago
             ]);
 
             return $venta;
@@ -345,14 +413,23 @@ class ConsumirServicioController extends Controller
                 ], 200);
             }
 
-            // Buscar la venta por payment_number
+            // Primero buscar si es una cuota (para pagos a crédito)
+            $cuota = Cuota::where('payment_number', $pedidoId)->first();
+            
+            // Si es una cuota, procesar pago de cuota
+            if ($cuota) {
+                return $this->procesarPagoCuota($cuota, $estado, $metodoPago);
+            }
+
+            // Si no es cuota, buscar la venta directamente (pago al contado)
             $venta = Venta::where('payment_number', $pedidoId)->first();
             
             Log::info('Búsqueda venta:', [
                 'pedidoId' => $pedidoId,
                 'encontrada' => $venta ? 'SÍ' : 'NO',
                 'venta_id' => $venta->id ?? null,
-                'estado_actual' => $venta->estado ?? null
+                'estado_actual' => $venta->estado ?? null,
+                'tipo_pago' => $venta->tipo_pago ?? null
             ]);
             
             if (!$venta) {
@@ -367,7 +444,19 @@ class ConsumirServicioController extends Controller
                 ], 200);
             }
 
-            // Estado 2 = Pago exitoso
+            // Si la venta es a crédito y tiene cuotas, procesar la primera cuota
+            if ($venta->esCredito() && $venta->cuotas()->count() > 0) {
+                $primeraCuota = $venta->cuotas()->where('numero_cuota', 1)->first();
+                if ($primeraCuota && $primeraCuota->estado === 'pendiente') {
+                    // Actualizar payment_number de la cuota si no lo tiene
+                    if (!$primeraCuota->payment_number) {
+                        $primeraCuota->update(['payment_number' => $pedidoId]);
+                    }
+                    return $this->procesarPagoCuota($primeraCuota, $estado, $metodoPago);
+                }
+            }
+
+            // Estado 2 = Pago exitoso (para ventas al contado)
             if ($estado == 2) {
                 Log::info('✅ PAGO CONFIRMADO - Actualizando venta:', ['venta_id' => $venta->id]);
                 
@@ -376,6 +465,7 @@ class ConsumirServicioController extends Controller
                     // Actualizar la venta
                     $venta->update([
                         'estado' => 'pagado',
+                        'estado_pago' => 'completado',
                         'metodo_pago' => $this->nombreMetodoPago($metodoPago),
                         'fecha_pago' => now(),
                     ]);
@@ -470,6 +560,22 @@ class ConsumirServicioController extends Controller
             ], 400);
         }
         
+        // Primero buscar en cuotas
+        $cuota = Cuota::where('payment_number', $paymentNumber)->first();
+        if ($cuota) {
+            $venta = $cuota->venta;
+            return response()->json([
+                'success' => true,
+                'pagado' => $cuota->estado === 'pagado',
+                'estado' => $cuota->estado,
+                'venta_id' => $venta->id,
+                'tipo_pago' => $venta->tipo_pago,
+                'estado_pago' => $venta->estado_pago,
+                'cuota_numero' => $cuota->numero_cuota,
+                'cuotas_pendientes' => $venta->cuotasPendientes()->count(),
+            ]);
+        }
+        
         $venta = Venta::where('payment_number', $paymentNumber)->first();
         
         if (!$venta) {
@@ -480,11 +586,246 @@ class ConsumirServicioController extends Controller
             ]);
         }
         
+        // Si es crédito, verificar estado de la primera cuota
+        if ($venta->esCredito()) {
+            $primeraCuota = $venta->cuotas()->where('numero_cuota', 1)->first();
+            return response()->json([
+                'success' => true,
+                'pagado' => $primeraCuota ? $primeraCuota->estado === 'pagado' : false,
+                'estado' => $venta->estado,
+                'venta_id' => $venta->id,
+                'tipo_pago' => $venta->tipo_pago,
+                'estado_pago' => $venta->estado_pago,
+                'cuota_numero' => 1,
+                'cuotas_pendientes' => $venta->cuotasPendientes()->count(),
+            ]);
+        }
+        
         return response()->json([
             'success' => true,
             'pagado' => $venta->estado === 'pagado',
             'estado' => $venta->estado,
-            'venta_id' => $venta->id
+            'venta_id' => $venta->id,
+            'tipo_pago' => $venta->tipo_pago ?? 'contado',
+            'estado_pago' => $venta->estado_pago ?? 'completado',
+        ]);
+    }
+
+    /**
+     * Procesar pago de una cuota (usado por el callback)
+     */
+    private function procesarPagoCuota(Cuota $cuota, $estado, $metodoPago)
+    {
+        $venta = $cuota->venta;
+        
+        Log::info('Procesando pago de cuota:', [
+            'cuota_id' => $cuota->id,
+            'numero_cuota' => $cuota->numero_cuota,
+            'venta_id' => $venta->id,
+            'estado_pago' => $estado
+        ]);
+
+        // Estado 2 = Pago exitoso
+        if ($estado == 2) {
+            DB::beginTransaction();
+            try {
+                // Marcar cuota como pagada
+                $cuota->update([
+                    'estado' => 'pagado',
+                    'fecha_pago' => now(),
+                ]);
+
+                // Actualizar estado de la venta
+                $venta->actualizarEstadoPago();
+
+                // Si es la primera cuota, limpiar carrito y descontar inventario
+                if ($cuota->numero_cuota === 1) {
+                    Carrito::where('usuario_id', $venta->usuario_id)->delete();
+                    
+                    foreach ($venta->detalleventas as $detalle) {
+                        if ($detalle->producto) {
+                            $detalle->producto->decrement('cantidad', $detalle->cantidad);
+                        }
+                    }
+                }
+
+                // Si todas las cuotas están pagadas, marcar venta como pagada completamente
+                if ($venta->estado_pago === 'completado') {
+                    $venta->update([
+                        'estado' => 'pagado',
+                        'metodo_pago' => $this->nombreMetodoPago($metodoPago),
+                        'fecha_pago' => now(),
+                    ]);
+                }
+
+                DB::commit();
+
+                Log::info('✅ Cuota pagada exitosamente:', [
+                    'cuota_id' => $cuota->id,
+                    'numero_cuota' => $cuota->numero_cuota,
+                    'venta_estado_pago' => $venta->estado_pago
+                ]);
+
+                return response()->json([
+                    'error' => 0,
+                    'status' => 1,
+                    'message' => 'Cuota pagada correctamente',
+                    'messageMostrar' => 0,
+                    'messageSistema' => '',
+                    'values' => true
+                ], 200);
+
+            } catch (\Exception $e) {
+                DB::rollBack();
+                Log::error('Error procesando pago de cuota:', ['error' => $e->getMessage()]);
+                
+                return response()->json([
+                    'error' => 1,
+                    'status' => 0,
+                    'message' => 'Error al procesar pago de cuota',
+                    'messageMostrar' => 0,
+                    'messageSistema' => $e->getMessage(),
+                    'values' => false
+                ], 200);
+            }
+        }
+
+        return response()->json([
+            'error' => 0,
+            'status' => 0,
+            'message' => 'Pago de cuota no confirmado',
+            'messageMostrar' => 0,
+            'messageSistema' => 'Estado: ' . $estado,
+            'values' => false
+        ], 200);
+    }
+
+    /**
+     * Generar QR para pagar siguiente cuota pendiente
+     */
+    public function generarQrCuota(Request $request)
+    {
+        try {
+            $validated = $request->validate([
+                'venta_id' => 'required|exists:ventas,id',
+                'tcRazonSocial' => 'required|string|max:100',
+                'tcCiNit' => 'required|string|max:20',
+                'tnTelefono' => 'required|string|min:8|max:15',
+                'tcCorreo' => 'required|email|max:100',
+            ]);
+
+            $venta = Venta::with('cuotas')->findOrFail($validated['venta_id']);
+            
+            // Verificar que sea venta a crédito
+            if (!$venta->esCredito()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Esta venta no es a crédito'
+                ], 400);
+            }
+
+            // Obtener siguiente cuota pendiente
+            $cuota = $venta->siguienteCuotaPendiente();
+            
+            if (!$cuota) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No hay cuotas pendientes'
+                ], 400);
+            }
+
+            // Generar QR para esta cuota
+            $datosQr = [
+                'nombre_cliente' => $validated['tcRazonSocial'],
+                'document_id' => preg_replace('/[^0-9]/', '', $validated['tcCiNit']),
+                'telefono' => preg_replace('/[^0-9]/', '', $validated['tnTelefono']),
+                'email' => $validated['tcCorreo'],
+                'numero_pedido' => 'CUOTA_' . $venta->id . '_' . $cuota->numero_cuota . '_' . time(),
+                'monto' => floatval($cuota->monto),
+                'detalle_pedido' => "Cuota {$cuota->numero_cuota} de 2 - Venta #{$venta->id}",
+            ];
+
+            $resultado = $this->pagoFacilService->generarQr($datosQr);
+
+            if ($resultado) {
+                // Actualizar cuota con payment_number
+                $cuota->update([
+                    'payment_number' => $resultado['paymentNumber'],
+                    'transaction_id' => $resultado['transactionId'] ?? null,
+                ]);
+
+                return response()->json([
+                    'success' => true,
+                    'data' => [
+                        'qrImage' => $resultado['qrBase64'] ?? $resultado['qrImage'] ?? null,
+                        'paymentNumber' => $resultado['paymentNumber'],
+                        'transactionId' => $resultado['transactionId'] ?? null,
+                        'amount' => $cuota->monto,
+                        'cuota_numero' => $cuota->numero_cuota,
+                        'fecha_vencimiento' => $cuota->fecha_vencimiento->format('Y-m-d'),
+                        'expirationDate' => $resultado['expirationDate'] ?? null,
+                    ]
+                ]);
+            }
+
+            return response()->json([
+                'success' => false,
+                'message' => 'No se pudo generar el QR para la cuota'
+            ], 500);
+
+        } catch (\Exception $e) {
+            Log::error('Error generando QR de cuota:', ['error' => $e->getMessage()]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Error: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Obtener cuotas pendientes del usuario actual
+     */
+    public function misCuotasPendientes()
+    {
+        $usuarioId = Auth::id();
+        
+        if (!$usuarioId) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Usuario no autenticado'
+            ], 401);
+        }
+
+        $ventasConCuotas = Venta::where('usuario_id', $usuarioId)
+            ->where('tipo_pago', 'credito')
+            ->whereIn('estado_pago', ['pendiente', 'parcial'])
+            ->with(['cuotas' => function($q) {
+                $q->where('estado', 'pendiente')->orderBy('numero_cuota');
+            }, 'detalleventas.producto'])
+            ->get();
+
+        $cuotasPendientes = [];
+        foreach ($ventasConCuotas as $venta) {
+            foreach ($venta->cuotas as $cuota) {
+                $cuotasPendientes[] = [
+                    'venta_id' => $venta->id,
+                    'cuota_id' => $cuota->id,
+                    'numero_cuota' => $cuota->numero_cuota,
+                    'monto' => $cuota->monto,
+                    'fecha_vencimiento' => $cuota->fecha_vencimiento->format('Y-m-d'),
+                    'esta_vencida' => $cuota->estaVencida(),
+                    'total_venta' => $venta->total,
+                    'productos' => $venta->detalleventas->map(fn($d) => [
+                        'nombre' => $d->producto->nombre ?? 'Producto',
+                        'cantidad' => $d->cantidad,
+                    ]),
+                ];
+            }
+        }
+
+        return response()->json([
+            'success' => true,
+            'cuotas' => $cuotasPendientes
         ]);
     }
 }
