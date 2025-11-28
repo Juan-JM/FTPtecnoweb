@@ -1,0 +1,326 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+[x-cloak] {
+    display: none;
+}
+
+/* Variables CSS por defecto */
+:root {
+    --primary-bg: #3b82f6;
+    --secondary-bg: #8b5cf6;
+    --text-primary: #1f2937;
+    --text-secondary: #4b5563;
+    --accent-color: #06b6d4;
+    --card-bg: #ffffff;
+    --border-color: #d1d5db;
+    --font-size-base: 16px;
+    --contrast-filter: none;
+}
+
+/* Transiciones suaves */
+* {
+    transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+}
+
+/* TEMA NIÑOS - DÍA */
+.theme-ninos-day {
+    --primary-bg: #fbbf24;
+    --secondary-bg: #f472b6;
+    --text-primary: #374151;
+    --text-secondary: #6b7280;
+    --accent-color: #34d399;
+    --card-bg: #fffbeb;
+    --border-color: #fbbf24;
+}
+
+.theme-ninos-day body,
+.theme-ninos-day .min-h-screen {
+    background: linear-gradient(135deg, #fef3c7 0%, #fce7f3 50%, #ddd6fe 100%);
+    color: var(--text-primary);
+}
+
+/* TEMA NIÑOS - NOCHE */
+.theme-ninos-night {
+    --primary-bg: #7c3aed;
+    --secondary-bg: #db2777;
+    --text-primary: #fbbf24;
+    --text-secondary: #f3e8ff;
+    --accent-color: #34d399;
+    --card-bg: #1e1b4b;
+    --border-color: #8b5cf6;
+}
+
+.theme-ninos-night body,
+.theme-ninos-night .min-h-screen {
+    background: linear-gradient(135deg, #581c87 0%, #be185d 50%, #1e1b4b 100%);
+    color: var(--text-primary);
+}
+
+/* TEMA JÓVENES - DÍA */
+.theme-jovenes-day {
+    --primary-bg: #3b82f6;
+    --secondary-bg: #8b5cf6;
+    --text-primary: #1f2937;
+    --text-secondary: #4b5563;
+    --accent-color: #06b6d4;
+    --card-bg: #eff6ff;
+    --border-color: #3b82f6;
+}
+
+.theme-jovenes-day body,
+.theme-jovenes-day .min-h-screen {
+    background: linear-gradient(135deg, #dbeafe 0%, #e0e7ff 50%, #f3e8ff 100%);
+    color: var(--text-primary);
+}
+
+/* TEMA JÓVENES - NOCHE */
+.theme-jovenes-night {
+    --primary-bg: #1e40af;
+    --secondary-bg: #7c2d12;
+    --text-primary: #60a5fa;
+    --text-secondary: #dbeafe;
+    --accent-color: #06b6d4;
+    --card-bg: #0f172a;
+    --border-color: #3b82f6;
+}
+
+.theme-jovenes-night body,
+.theme-jovenes-night .min-h-screen {
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #1e40af 100%);
+    color: var(--text-primary);
+}
+
+/* TEMA ADULTOS - DÍA */
+.theme-adultos-day {
+    --primary-bg: #6b7280;
+    --secondary-bg: #374151;
+    --text-primary: #111827;
+    --text-secondary: #4b5563;
+    --accent-color: #4f46e5;
+    --card-bg: #f9fafb;
+    --border-color: #d1d5db;
+}
+
+.theme-adultos-day body,
+.theme-adultos-day .min-h-screen {
+    background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 50%, #e5e7eb 100%);
+    color: var(--text-primary);
+}
+
+/* TEMA ADULTOS - NOCHE */
+.theme-adultos-night {
+    --primary-bg: #1f2937;
+    --secondary-bg: #374151;
+    --text-primary: #d1d5db;
+    --text-secondary: #9ca3af;
+    --accent-color: #4f46e5;
+    --card-bg: #111827;
+    --border-color: #6b7280;
+}
+
+.theme-adultos-night body,
+.theme-adultos-night .min-h-screen {
+    background: linear-gradient(135deg, #111827 0%, #1f2937 50%, #374151 100%);
+    color: var(--text-primary);
+}
+
+/* Aplicar variables a elementos específicos */
+nav, header, .bg-white {
+    background-color: var(--card-bg) !important;
+    color: var(--text-primary) !important;
+    border-color: var(--border-color) !important;
+}
+
+.bg-gray-100 {
+    background-color: var(--card-bg) !important;
+}
+
+.text-gray-700, .text-gray-800, .text-gray-900 {
+    color: var(--text-primary) !important;
+}
+
+.text-gray-500, .text-gray-600 {
+    color: var(--text-secondary) !important;
+}
+
+.border-gray-100, .border-gray-200, .border-gray-300 {
+    border-color: var(--border-color) !important;
+}
+
+/* Botones primarios */
+.bg-blue-500, .bg-blue-600 {
+    background-color: var(--primary-bg) !important;
+}
+
+.bg-yellow-500 {
+    background-color: var(--accent-color) !important;
+}
+
+/* Cards y formularios */
+.bg-white {
+    background-color: var(--card-bg) !important;
+}
+
+/* Tamaños de fuente */
+.font-size-small {
+    font-size: 14px;
+}
+
+.font-size-base {
+    font-size: 16px;
+}
+
+.font-size-large {
+    font-size: 18px;
+}
+
+.font-size-xlarge {
+    font-size: 20px;
+}
+
+/* Contraste alto */
+.high-contrast {
+    filter: var(--contrast-filter);
+}
+
+.high-contrast nav,
+.high-contrast header,
+.high-contrast .bg-white,
+.high-contrast button {
+    border-width: 2px !important;
+    border-style: solid !important;
+}
+
+/* Elementos específicos del tema */
+.btn-primary {
+    background-color: var(--primary-bg);
+    color: white;
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.btn-primary:hover {
+    opacity: 0.8;
+    transform: translateY(-1px);
+}
+
+.btn-secondary {
+    background-color: var(--secondary-bg);
+    color: white;
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.btn-secondary:hover {
+    opacity: 0.8;
+}
+
+/* Inputs */
+input, textarea, select {
+    background-color: var(--card-bg) !important;
+    color: var(--text-primary) !important;
+    border-color: var(--border-color) !important;
+}
+
+input:focus, textarea:focus, select:focus {
+    border-color: var(--primary-bg) !important;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1) !important;
+}
+
+/* Sidebar admin */
+.bg-gray-800 {
+    background-color: var(--secondary-bg) !important;
+}
+
+/* Footer */
+footer {
+    background-color: var(--secondary-bg) !important;
+    color: white !important;
+}
+
+/* Tablas */
+table {
+    background-color: var(--card-bg) !important;
+    color: var(--text-primary) !important;
+}
+
+th {
+    background-color: var(--primary-bg) !important;
+    color: white !important;
+}
+
+tr:nth-child(even) {
+    background-color: rgba(59, 130, 246, 0.05) !important;
+}
+
+/* Dropdowns y menús */
+.dropdown-content {
+    background-color: var(--card-bg) !important;
+    border-color: var(--border-color) !important;
+}
+
+/* Estados hover */
+.hover\\:bg-gray-100:hover {
+    background-color: var(--primary-bg) !important;
+    color: white !important;
+}
+
+.hover\\:bg-gray-700:hover {
+    background-color: var(--accent-color) !important;
+}
+
+/* Responsivo */
+@media (max-width: 768px) {
+    .font-size-small { font-size: 12px; }
+    .font-size-base { font-size: 14px; }
+    .font-size-large { font-size: 16px; }
+    .font-size-xlarge { font-size: 18px; }
+}
+
+/* Animaciones */
+@keyframes themeTransition {
+    from { opacity: 0.8; }
+    to { opacity: 1; }
+}
+
+.theme-ninos-day, .theme-ninos-night,
+.theme-jovenes-day, .theme-jovenes-night,
+.theme-adultos-day, .theme-adultos-night {
+    animation: themeTransition 0.5s ease-in-out;
+}
+
+/* Skip links para accesibilidad */
+.skip-link {
+    position: absolute;
+    left: 0;
+    top: 0;
+    background: var(--primary-bg);
+    color: white;
+    padding: 0.5rem;
+    transform: translateY(-100%);
+    transition: transform 0.3s ease;
+    z-index: 50;
+}
+
+.skip-link:focus {
+    transform: translateY(0);
+}
+
+/* Estados de carga */
+.loading-spinner {
+    border-color: var(--primary-bg);
+    border-top-color: transparent;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
