@@ -55,7 +55,7 @@ const verMisCompras = () => {
                         Bienvenido {{ usuario?.nombre || 'Proveedor' }}
                     </h2>
                     <h2 class="text-2xl font-bold leading-tight text-gray-900">
-                        Panel de Proveedor - TeamCell
+                        Panel de Proveedor - Tienda Dame
                     </h2>
                 </div>
                 

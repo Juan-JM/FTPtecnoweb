@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->integer('cantidad_disponible')->default(0);
             $table->date('fecha_ultima_actualizacion')->default(now());
-            $table->enum('tipo_movimiento', ['compra', 'venta']);
+            $table->enum('tipo_movimiento', ['compra', 'venta', 'entrada', 'salida', 'ajuste']);
             $table->integer('cantidad_movimiento');
             $table->foreignId('producto_id')->constrained('productos')->cascadeOnUpdate()->cascadeOnDelete();
             $table->timestamps();

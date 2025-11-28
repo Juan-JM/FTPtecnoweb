@@ -66,7 +66,7 @@
                                 <td class="px-4 py-2 text-sm text-gray-900">
                                     <div>
                                         <div class="font-medium">{{ inventario.producto.nombre }}</div>
-                                        <div class="text-xs text-gray-500">{{ inventario.producto.categoria?.nombre }}</div>
+                                        <div class="text-xs text-gray-500">{{ inventario.producto.categoria?.nombre || 'Sin categoría' }}</div>
                                     </div>
                                 </td>
                                 <td class="px-4 py-2 text-sm">

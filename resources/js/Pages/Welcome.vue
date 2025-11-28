@@ -49,7 +49,7 @@ function toggleTheme() {
 </script>
 
 <template>
-    <Head title="Bienvenido a TeamCell" />
+    <Head title="Bienvenido a Tienda Dame" />
     
     <div class="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-blue-900 transition-all duration-500">
         <!-- Header -->
@@ -65,7 +65,7 @@ function toggleTheme() {
                         </div>
                         <div>
                             <h1 class="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                                TeamCell
+                                Tienda Dame
                             </h1>
                             <p class="text-sm text-gray-500 dark:text-gray-400">Tu Tienda Virtual</p>
                         </div>
@@ -142,7 +142,7 @@ function toggleTheme() {
                     <h1 class="text-5xl md:text-6xl font-bold text-gray-900 dark:text-white mb-6">
                         Bienvenido a 
                         <span class="bg-gradient-to-r from-blue-600 via-purple-600 to-green-600 bg-clip-text text-transparent">
-                            TeamCell
+                            Tienda Dame
                         </span>
                     </h1>
                     <p class="text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto leading-relaxed">
@@ -193,7 +193,7 @@ function toggleTheme() {
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="text-center mb-16">
                     <h2 class="text-4xl font-bold text-gray-900 dark:text-white mb-4">
-                        ¿Por qué elegir TeamCell?
+                        ¿Por qué elegir Tienda Dame?
                     </h2>
                     <p class="text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
                         Ofrecemos la mejor experiencia en papelería virtual con servicios de primera calidad.
@@ -268,7 +268,7 @@ function toggleTheme() {
                             </div>
                         </div>
                         <blockquote class="text-lg text-gray-600 dark:text-gray-300 mb-6">
-                            "Como educador, necesito materiales de calidad y TeamCell siempre supera mis expectativas. 
+                            "Como educador, necesito materiales de calidad y Tienda Dame siempre supera mis expectativas. 
                             Su catálogo es extenso y los precios son muy competitivos."
                         </blockquote>
                         <div class="flex items-center">
@@ -327,7 +327,7 @@ function toggleTheme() {
                                 </svg>
                             </div>
                             <span class="text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
-                                TeamCell
+                                Tienda Dame
                             </span>
                         </div>
                         <p class="text-gray-300 mb-6 max-w-md">
@@ -385,7 +385,7 @@ function toggleTheme() {
                 <div class="border-t border-gray-800 pt-8 mt-12">
                     <div class="flex flex-col md:flex-row justify-between items-center">
                         <div class="text-gray-400 text-sm mb-4 md:mb-0">
-                            © 2024 TeamCell. Todos los derechos reservados.
+                            © 2024 Tienda Dame. Todos los derechos reservados.
                         </div>
                         <div class="flex items-center space-x-6 text-sm text-gray-400">
                             <span>Página visitada {{ visitCount.toLocaleString() }} veces</span>

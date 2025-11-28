@@ -155,6 +155,7 @@ Route::middleware([\App\Http\Middleware\ContadorDeVisitas::class])->group(functi
         Route::post('/inventarios', [InventarioController::class, 'store'])->name('admin.inventarios.store');
         Route::put('/inventarios/{id}', [InventarioController::class, 'update'])->name('admin.inventarios.update');
         Route::delete('/inventarios/{id}', [InventarioController::class, 'destroy'])->name('admin.inventarios.destroy');
+        Route::get('/inventarios/resumen', [InventarioController::class, 'resumen'])->name('admin.inventarios.resumen');
     });
 
     // CRUD Menús dinámicos

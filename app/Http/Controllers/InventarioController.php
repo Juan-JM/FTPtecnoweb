@@ -14,7 +14,7 @@ class InventarioController extends Controller
 {
     public function index()
     {
-        $inventarios = Inventario::with('producto')
+        $inventarios = Inventario::with(['producto.categoria'])
             ->orderBy('created_at', 'desc')
             ->get()
             ->map(function ($inventario) {

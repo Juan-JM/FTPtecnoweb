@@ -59,7 +59,7 @@ const logout = () => {
                                 <Link :href="route('dashboard')">
                                     <img 
                                         :src="logoUrl" 
-                                        alt="TeamCell Logo" 
+                                        alt="Tienda Dame Logo" 
                                         class="h-20 w-auto"
                                         @error="handleImageError"
                                     />
@@ -220,7 +220,7 @@ export default {
             // Si la imagen falla, usar un placeholder o texto
             event.target.style.display = 'none';
             const textLogo = document.createElement('span');
-            textLogo.textContent = 'TeamCell';
+            textLogo.textContent = 'Tienda Dame';
             textLogo.className = 'text-xl font-bold text-blue-600';
             event.target.parentNode.appendChild(textLogo);
         }

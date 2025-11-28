@@ -105,7 +105,7 @@ onMounted(() => {
                         Bienvenido {{ usuario?.nombre || 'Usuario' }}
                     </h2>
                     <h2 class="text-2xl font-bold leading-tight text-gray-900">
-                        TeamCell - Tu Tienda Virtual
+                        Tienda Dame - Tu Tienda Virtual
                     </h2>
                 </div>
                 
